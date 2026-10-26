@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: ai-document-investigation-agent
+
+  h2:
+    console:
+      # Local assessment convenience only. Do not expose this console to an untrusted network.
+      enabled: true
+      path: /h2-console
+
+  datasource:
+    # File-based H2: data is retained across normal application restarts.
+    # The relative path keeps the local assessment database under the project directory.
+    url: jdbc:h2:file:./data/document-agent
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  jpa:
+    hibernate:
+      # Local assessment default; use managed database migrations for production.
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+  ai:
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      chat:
+        options:
+          model: ${OLLAMA_MODEL:llama3.2:3b}
+          temperature: 0.1
+      init:
+        pull-model-strategy: never
+
+server:
+  port: 8080
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  ai:
+    # mock is the safe default; set APP_AI_MODE=ollama to use a real local LLM.
+    mode: ${APP_AI_MODE:mock}
+  documents:
+    max-upload-size-bytes: 5242880
+    max-extracted-characters: 1000000
+    max-documents-per-investigation: 10
+    max-chunks-per-document: 500
+    chunk-size: 1000
+    chunk-overlap: 100
+
+# Spring AI Ollama configuration is under spring.ai above. The model must be pulled manually before enabling ollama mode.

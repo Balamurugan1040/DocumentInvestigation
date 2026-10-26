@@ -1,0 +1,9 @@
+package com.example.documentagent.repository;
+import com.example.documentagent.domain.*; import org.junit.jupiter.api.Test; import org.springframework.beans.factory.annotation.Autowired; import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import static org.assertj.core.api.Assertions.assertThat;
+@DataJpaTest class PersistenceLayerTests {
+ @Autowired DocumentRepository documentRepository; @Autowired DocumentChunkRepository chunkRepository; @Autowired InvestigationRepository investigationRepository;
+ @Test void savesDocumentAndScopesLookupByOwner(){Document d=new Document("policy.txt","text/plain","a".repeat(64),"user-1");d.setExtractedText("Policy expires after twelve months.");d.setStatus(DocumentStatus.PROCESSED);Document s=documentRepository.saveAndFlush(d);assertThat(s.getId()).isNotNull();assertThat(s.getCreatedAt()).isNotNull();assertThat(documentRepository.findByIdAndOwnerId(s.getId(),"user-1")).isPresent();assertThat(documentRepository.findByIdAndOwnerId(s.getId(),"user-2")).isEmpty();}
+ @Test void savesChunkWithSourceOffsets(){Document d=documentRepository.saveAndFlush(new Document("policy.txt","text/plain","b".repeat(64),"user-1"));DocumentChunk c=chunkRepository.saveAndFlush(new DocumentChunk(d,0,"Policy expires after twelve months.",0,35));assertThat(c.getId()).isNotNull();assertThat(chunkRepository.findAllByDocumentIdOrderByChunkIndexAsc(d.getId())).hasSize(1).first().extracting(DocumentChunk::getStartOffset).isEqualTo(0);}
+ @Test void savesInvestigationStatus(){Investigation i=new Investigation("When does the policy expire?","user-1");i.setStatus(InvestigationStatus.INSUFFICIENT_EVIDENCE);Investigation s=investigationRepository.saveAndFlush(i);assertThat(s.getId()).isNotNull();assertThat(s.getStatus()).isEqualTo(InvestigationStatus.INSUFFICIENT_EVIDENCE);}
+}
